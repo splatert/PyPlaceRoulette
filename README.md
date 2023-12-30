@@ -12,7 +12,7 @@ Python
 
 ## Setup
 - Open cfg.py and set any options you want to toggle to True or False.
-- (optional) In case you only receive 'Error 403 - Forbidden' errors, try passing a ROBLOSECURITY key to the 'SecurityKey' option. Do NOT share this key with anyone.
+- Pass your ROBLOSECURITY key to the 'SecurityKey' option. It is required so that you don't get 'Forbidden' and 'GuestProhibited' errors. Do NOT share this key with anyone.
 
 
 ## Options and what they do
