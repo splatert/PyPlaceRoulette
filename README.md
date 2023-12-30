@@ -14,6 +14,9 @@ Python
 - Open cfg.py and set any options you want to toggle to True or False.
 - Pass your ROBLOSECURITY key to the 'SecurityKey' option. It is required so that you don't get 'Forbidden' and 'GuestProhibited' errors. Do NOT share this key with anyone.
 
+## Usage
+Run PyPlaceRoulette.py then press Enter to begin searching for a place.
+
 
 ## Options and what they do
 - SkipStarterPlaces — Do not search for starter/new-user places. These games typically end with '<username>'s Place' and are never edited most of the time.
