@@ -76,10 +76,17 @@ def findValidPlace():
                     if settings["SkipPrivatePlaces"]:
                         print("Checking place availability...")
                         
-                        PlaceStatus = requests.get("https://games.roblox.com/v1/games/multiget-playability-status", params=params, cookies=cookies)
-                        if PlaceStatus.status_code == 200:
-                            PlaceStatus = PlaceStatus.json()
-                            if PlaceStatus[0]["isPlayable"] == "false":
+                        placeStatusParams = {'universeIds': universeID}
+
+                        getPlaceStatus = requests.get("https://games.roblox.com/v1/games/multiget-playability-status", params=placeStatusParams, cookies=cookies)
+                        if getPlaceStatus.status_code == 200:
+                            
+                            placeStatus = getPlaceStatus.json()
+                            isPlayable = placeStatus[0]["playabilityStatus"]
+
+                            print(str(universeID) + " -> " + placeStatus[0]["playabilityStatus"])
+
+                            if isPlayable != "Playable":
                                 searchFailed = True
                         else:
                             searchFailed = True
@@ -107,6 +114,7 @@ def findValidPlace():
     if settings["ViewPlaceInWebBrowser"]:
         if not searchFailed:
             viewPlaceInWebBrowser(placeID)
+
 
     return searchFailed
 
