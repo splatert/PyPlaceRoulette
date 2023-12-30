@@ -1,8 +1,9 @@
 # PyPlaceRoulette
 Python tool to discover random Roblox places
 
+![Untitled-1](https://github.com/splatert/PyPlaceRoulette/assets/82643571/79493831-ac76-4386-9314-46ea6c19700c)
 
-![Untitled-1](https://github.com/splatert/PyPlaceRoulette/assets/82643571/3f9ecb1e-5415-442e-a861-a6af9af0ca40)
+
 
 
 ## Requirements
