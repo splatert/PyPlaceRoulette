@@ -6,7 +6,7 @@ settings = {
     # Replace COOKIE with your ROBLOSECURITY key for PyPlaceRoulette to make web requests. Do NOT share the key with anyone.
     # It is required so that you don't end up getting 'Unauthorized' errors.
 
-    "SecurityKey": "COOKIE" 
+    "SecurityKey": "COOKIE", 
     # Skip starter (new user) places
     "SkipStarterPlaces": True,
 
