@@ -156,7 +156,7 @@ def viewPlaceInWebBrowser(pID):
 
 def createPlaceID():
     print("\nCreating a random ID...")
-    placeID = random.randint(125000, random.randint(250000, 50000000))
+    placeID = random.randint(cfg.settings["minID"], random.randint(cfg.settings["minID"], cfg.settings["maxID"]))
     return placeID
 
 
