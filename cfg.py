@@ -16,6 +16,9 @@ settings = {
     # Skip places that you cannot access
     "SkipPrivatePlaces": True,
 
+   # Skip any place that doesn't have more than 15,000 place visits (slow).
+    "ShowOnlySuccessfulPlaces": False,
+
     # Smallest ID in random ID generation (Default: 250000)
     "minID": 250000,
 
