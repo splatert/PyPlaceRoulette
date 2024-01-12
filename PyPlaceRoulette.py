@@ -10,6 +10,7 @@ import webbrowser
 
 import cfg
 
+
 myRobloSecurityKey = cfg.settings["SecurityKey"]
 
 #print(cfg.settings["SkipStarterPlaces"])
@@ -19,12 +20,19 @@ settings = {
     "SkipStarterPlaces": cfg.settings["SkipStarterPlaces"],
     "SkipPrivatePlaces": cfg.settings["SkipPrivatePlaces"],
     "ViewPlaceInWebBrowser": cfg.settings["ViewPlaceInWebBrowser"],
+    "ShowOnlySuccessfulPlaces": cfg.settings["ShowOnlySuccessfulPlaces"],
+}
+
+
+reqVars = {
+    "attempts": 0
 }
 
 
 
 sys.path.append("../include")
 import requests
+
 
 
 
@@ -35,18 +43,25 @@ def findValidPlace():
 
     session = requests.Session()
     cookies = {'.ROBLOSECURITY': myRobloSecurityKey}
-    
 
     print("Connecting to Universes API...")
     print("https://apis.roblox.com/universes/v1/places/" + str(placeID) + "/universe")
 
 
-    getUniverseID = requests.get("https://apis.roblox.com/universes/v1/places/" + str(placeID) + "/universe").json()
-    universeID = getUniverseID["universeId"]
+    getUniverseID = requests.get("https://apis.roblox.com/universes/v1/places/" + str(placeID) + "/universe")
 
-    if universeID == None:
-        print("\nItem for ID is not a place.") # No universe ID = not a place.
+    if (getUniverseID.status_code != 200):
         searchFailed = True
+    else:
+
+        getUniverseID = getUniverseID.json()
+        universeID = getUniverseID["universeId"]
+
+        if universeID == None:
+            print("\nItem for ID is not a place.") # No universe ID = not a place.
+            searchFailed = True
+
+   
 
 
     if not searchFailed:
@@ -70,7 +85,17 @@ def findValidPlace():
 
                     if settings["SkipStarterPlaces"]:
                         if placeName.endswith("'s Place"):
+                            print("Skipping starter places...")
                             searchFailed = True
+
+                    if settings["ShowOnlySuccessfulPlaces"]:
+
+                        print("Searching for places that were popular...")
+
+                        placeVisits = pInfo["data"][0]["visits"]
+                        #print("Visits: " + str(placeVisits))
+                        if int(placeVisits) < 15000:
+                            searchFailed = True,
 
 
                     if settings["SkipPrivatePlaces"]:
@@ -93,6 +118,7 @@ def findValidPlace():
                     
 
                     if not searchFailed:
+                        
                         place = {
                             "name": pInfo["data"][0]["name"],
                             "desc": pInfo["data"][0]["description"],
@@ -102,6 +128,13 @@ def findValidPlace():
                             "created": pInfo["data"][0]["created"],
                             "url": '\033[94m' + "https://www.roblox.com/games/" + str(pInfo["data"][0]["rootPlaceId"]) + '\033[0;0m',
                         }
+
+                        basicDetails = [
+                            pInfo["data"][0]["rootPlaceId"],
+                            pInfo["data"][0]["name"],
+                            pInfo["data"][0]["creator"]["name"]
+                        ]
+                        storeBasicPlaceDetails(basicDetails[0], basicDetails[1], basicDetails[2])
 
                         print("\n" + '\033[1m' + place["name"] + "\033[0;0m" + " [ " + place["url"] + " ] " )
                         print("Created by: " + place["creator"] + " | " + place["created"][0:10])
@@ -150,6 +183,47 @@ def loadingbar():
 
 
 
+
+
+def addToFavs():
+
+    basicPlaceInfo = getBasicPlaceDetails()
+
+    favs = open("favs.txt", 'a') # a for append
+    favs.write("\n{0},{1},{2}".format(basicPlaceInfo["id"], basicPlaceInfo["placeName"], basicPlaceInfo["creator"]))
+
+    favs.close()
+
+
+
+basicPlaceDetails = {
+    "placeName": "Crossroads",
+    "creator": "Roblox",
+    "id": "0",
+}
+
+
+def storeBasicPlaceDetails(PlaceID, PlaceName, Creator):
+    
+    # place title and ID leaves paranthesis and quotation marks for some reason. Let's clean them out.
+    #placeID_clean = PlaceID.split("'")
+    #placeName_clean = PlaceName.split('"')
+    
+    basicPlaceDetails["id"] = PlaceID,
+    basicPlaceDetails["placeName"] = PlaceName,
+    basicPlaceDetails["creator"] = Creator
+    
+    #print(str(basicPlaceDetails["id"]) + ", " + str(basicPlaceDetails["placeName"]) + ", " + str(basicPlaceDetails["creator"]))
+
+
+
+
+def getBasicPlaceDetails():
+    return basicPlaceDetails
+
+
+
+
 def viewPlaceInWebBrowser(pID):
         webbrowser.open("https://www.roblox.com/games/" + str(pID))
 
@@ -161,24 +235,60 @@ def createPlaceID():
 
 
 
+
 def performSearch():
     searchFailed = findValidPlace()
 
     if searchFailed:
         clearScreen()
         title()
-
         loadingbar()
-        performSearch()
+
+        print("Retries: " + str(reqVars["attempts"]))
+
+        if reqVars["attempts"] < 500:
+            
+            reqVars["attempts"] += 1
+
+            performSearch()
+        else:
+            reqVars["attempts"] = 0
+            print("Too many requests. Wait for a few minutes then try again.")
+
+
+            prompt = input("\x1b[38;5;110;1m" + "Enter" + "\033[0m" + " Retry  " + "\x1b[38;5;110;1m" + "E" + "\033[0m" + " Quit.\n")
+            if prompt == 'e':
+                exit()
+            else:
+                performSearch()
+
 
     else:
-        prompt = input("Press Enter to search again. Type 'e' to quit.\n")
-        if prompt != 'e':
-            performSearch()
+        searchResultsPrompt()
+
+
+
+def searchResultsPrompt(addedToFavStatus=False):
+    
+    addToFavText = "(wip)"
+    if addedToFavStatus:
+        addToFavText = " Added to favorites."
+
+    prompt = input("\n" + "\33[33;1m" + "F" + "\033[0m" + addToFavText + "\n" +"\x1b[38;5;110;1m" + "Enter" + "\033[0m" + " New Search  " + "\x1b[38;5;110;1m" + "E" + "\033[0m" + " Quit.\n")
+    
+    if prompt != 'e' and prompt != 'f':
+        performSearch()
+
+    elif prompt == 'f' and prompt != 'e':
+        addToFavs()
+        searchResultsPrompt(addedToFavStatus=True)
+
+
+
 
 
 def clearScreen():
-    os.system('cls' if os.name=='nt' else 'clear')
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 
 def title():
@@ -190,13 +300,11 @@ def main():
     
     title()
     
-    prompt = input("Press Enter to begin. Type 'e' to exit.\n")
+    prompt = input("\x1b[38;5;110;1m" + "Enter" + "\033[0m" + " Begin  " + "\x1b[38;5;110;1m" + "E" + "\033[0m" + " Quit.\n")
     if prompt == 'e':
         exit()
     else:
         performSearch()
-
-
 
 
 main()
