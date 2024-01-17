@@ -25,7 +25,8 @@ settings = {
 
 
 reqVars = {
-    "attempts": 0
+    "attempts": 0,
+    "searchMode": 0
 }
 
 
@@ -35,8 +36,18 @@ import requests
 
 
 
+def requestUniverseID(placeID):
+    print("Requesting Universe ID for " + str(placeID))
+    uid = requests.get("https://apis.roblox.com/universes/v1/places/" + str(placeID) + "/universe")
+    
+    if uid.status_code == 200:
+        return uid
+    else:
+        return None
 
-def findValidPlace():
+
+
+def search():
     
     searchFailed = False
     placeID = createPlaceID()
@@ -45,12 +56,10 @@ def findValidPlace():
     cookies = {'.ROBLOSECURITY': myRobloSecurityKey}
 
     print("Connecting to Universes API...")
-    print("https://apis.roblox.com/universes/v1/places/" + str(placeID) + "/universe")
 
+    getUniverseID = requestUniverseID(placeID)
 
-    getUniverseID = requests.get("https://apis.roblox.com/universes/v1/places/" + str(placeID) + "/universe")
-
-    if (getUniverseID.status_code != 200):
+    if getUniverseID == None:
         searchFailed = True
     else:
 
@@ -231,13 +240,24 @@ def viewPlaceInWebBrowser(pID):
 def createPlaceID():
     print("\nCreating a random ID...")
     placeID = random.randint(cfg.settings["minID"], random.randint(cfg.settings["minID"], cfg.settings["maxID"]))
+    print("[OK]")
     return placeID
 
 
 
 
+
 def performSearch():
-    searchFailed = findValidPlace()
+
+    searchFailed = None
+
+
+    if reqVars["searchMode"] == 1:
+        searchFailed = search()
+    elif reqVars["searchMode"] == 2:
+        searchFailed = fastSearch()
+
+    
 
     if searchFailed:
         clearScreen()
@@ -264,6 +284,7 @@ def performSearch():
 
 
     else:
+        reqVars["attempts"] = 0
         searchResultsPrompt()
 
 
@@ -296,15 +317,159 @@ def title():
 
 
 
+
+def getPlaceAvailability(universeID):
+
+    placeStatusParams = {'universeIds': universeID}
+    cookies = {'.ROBLOSECURITY': myRobloSecurityKey}
+
+    getPlaceStatus = requests.get("https://games.roblox.com/v1/games/multiget-playability-status", params=placeStatusParams, cookies=cookies)
+    
+    if getPlaceStatus.status_code == 200:          
+        placeStatus = getPlaceStatus.json()
+        playability = placeStatus[0]["playabilityStatus"]
+        
+        if playability == "Playable":
+            return True
+        else:
+            return False
+
+
+
+def multigetPlaceInfo(placeID):
+    
+    print("Reading place details...")
+
+    session = requests.Session()
+    cookies = {'.ROBLOSECURITY': myRobloSecurityKey}
+    params = {'placeIds': placeID}
+
+    getPlaceInfo = requests.get("https://games.roblox.com/v1/games/multiget-place-details", cookies=cookies, params=params)
+    
+
+    placeInfoTemplate = {
+        "placeId":	0,
+        "name": "Loading...",
+        "sourceName": "Loading...",
+        "description": "Loading...",
+        "sourceDescription": "Loading...",
+        "url": "https://www.roblox.com/games/1844238/Fjorkavills-Hellgate",
+        "builder": "Loading...",
+        "builderId": 0,
+        "isPlayable": True,
+        "reasonProhibited": "None",
+        "universeId": 420602,
+        "universeRootPlaceId": 1844238,
+    }
+
+
+    if getPlaceInfo.status_code == 200:
+
+        placeInfo = getPlaceInfo.json()
+
+        if len(placeInfo) > 0:
+            # fill in array with place details
+            keysToTake = ["placeId", "name", "description", "builder", "isPlayable"]
+        
+            for key in keysToTake:
+                if placeInfo[0][key]:
+                    placeInfoTemplate[key] = placeInfo[0][key]
+                else:
+                    placeInfoTemplate[key] = "Could not fetch."
+
+            print("[OK]", end=" ")
+            return placeInfoTemplate
+
+        else:
+            return "ErrNotValidPlace"
+
+    else:
+        print("[Error] Not a place. Performing new search...")
+        return "ErrNotValidPlace"
+    
+
+        
+
+def placeIsNotTemplate(placeName):
+
+    valid = False
+
+    if placeName.endswith("'s Place"):
+        valid = False
+    else:
+        valid = True
+
+    return valid
+
+
+
+
+def fastSearch():
+
+    searchFailed = False
+
+    placeID = createPlaceID()
+    place = multigetPlaceInfo(placeID)
+
+    if place == "ErrNotValidPlace":
+        searchFailed = True
+    else:
+
+        placeDetails = place
+
+        if settings["SkipStarterPlaces"]:
+            notAStarterPlace = placeIsNotTemplate(placeDetails["name"])
+            if notAStarterPlace == False:
+                searchFailed = True
+
+
+        if settings["SkipPrivatePlaces"]:
+            if placeDetails["isPlayable"] == "true":
+                searchFailed = False
+            elif placeDetails["isPlayable"] == "false":
+                searchFailed = True
+
+        
+        if not searchFailed:
+            print("\n" + '\033[1m' + placeDetails["name"] + "\033[0;0m" + " [ " + placeDetails["url"] + " ] " )
+            print("Created by: " + placeDetails["builder"])
+            
+            if settings["ViewPlaceInWebBrowser"]:
+                if not searchFailed:
+                    viewPlaceInWebBrowser(placeID)
+
+
+    
+
+    return searchFailed
+
+
+
+
+
 def main():   
     
     title()
     
-    prompt = input("\x1b[38;5;110;1m" + "Enter" + "\033[0m" + " Begin  " + "\x1b[38;5;110;1m" + "E" + "\033[0m" + " Quit.\n")
-    if prompt == 'e':
-        exit()
-    else:
+    print("\nChoose randomizer.")
+    print("A. Standard")
+    print("D. Fast\n\n")
+
+    prompt = input("\x1b[38;5;110;1m" + "A/D" + "\033[0m" + " Choose  " + "\x1b[38;5;110;1m" + "E" + "\033[0m" + " Quit.\n")
+    if prompt == "a" or prompt == "d":
+        
+        if prompt == "a":
+            reqVars["searchMode"] = 1
+        elif prompt == "d":
+            reqVars["searchMode"] = 2
+
+        #print("mode: " + str(reqVars["searchMode"]))
         performSearch()
+
+    elif prompt == "e":
+        
+        clearScreen()
+        exit()
 
 
 main()
