@@ -1,6 +1,7 @@
 # PyPlaceRoulette
 Python tool to discover random Roblox places
 
+
 ![Untitled-1](https://github.com/splatert/PyPlaceRoulette/assets/82643571/79493831-ac76-4386-9314-46ea6c19700c)
 
 
@@ -14,8 +15,13 @@ Python
 - Open cfg.py and set any options you want to toggle to True or False.
 - Pass your ROBLOSECURITY key to the 'SecurityKey' option. It is required so that you don't get 'Forbidden' and 'GuestProhibited' errors. Do NOT share this key with anyone.
 
+
 ## Usage
-Run PyPlaceRoulette.py then press Enter to begin searching for a place.
+1. Run PyPlaceRoulette.py.
+2. Choose a mode.
+ - Standard - Standard way of doing searches.
+ - Fast - Another way to perform searches. Gives faster results.
+3. ??? PROFIT
 
 
 ## Options and what they do
